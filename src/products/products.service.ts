@@ -7,6 +7,8 @@ import { DataSource, Repository } from 'typeorm';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { validate as isUUID } from "uuid";
 import { User } from 'src/auth/entities/user.entity';
+import { Category } from 'src/categories/entities/category.entity';
+import { FilterDto } from './dto/filter.dto';
 
 @Injectable()
 export class ProductsService {
@@ -14,6 +16,8 @@ export class ProductsService {
   private readonly logger = new Logger('ProductsService');
 
   constructor(
+    @InjectRepository(Category)
+    private readonly categoryRepository: Repository<Category>,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
     @InjectRepository(ProductImage)
@@ -24,6 +28,14 @@ export class ProductsService {
   }
   async create(createProductDto: CreateProductDto, user: User) {
     
+    const { categoryId, ...productDeatil } = createProductDto;
+
+    const category = await this.categoryRepository.findOneBy({ id: categoryId });
+    if (!category) {
+        throw new NotFoundException(`Category with ID ${categoryId} not found`);
+    }
+
+
     try {
 
       const { images = [], ...productDetails } = createProductDto;
@@ -31,6 +43,7 @@ export class ProductsService {
       const product = this.productRepository.create({
         ...productDetails,
         user,
+        category,
         images: images.map( image => this.productImageRepository.create({url: image}) )
         });
 
@@ -43,17 +56,87 @@ export class ProductsService {
     }
   }
 
+  // async findAll(paginationDto: PaginationDto) {
+
+  //   const {  limit=10, offset=0 } = paginationDto;
+
+  //   const [products, total] =  await this.productRepository.findAndCount({
+  //     take: limit,
+  //     skip: offset,
+  //     relations: {
+  //       images: true
+  //     }
+  //   });
+
+  //   const mappedProducts = products.map(({ images, ...rest }) => ({
+  //     ...rest,
+  //     images: images.map(img => img.url),
+  //   }));
+
+  //   return {
+  //     products: mappedProducts,
+  //     total
+  //   };
+  // }
+
   async findAll(paginationDto: PaginationDto) {
 
-    const {  limit=10, offset=0 } = paginationDto;
+    const {  limit=10, offset=0, categoryId } = paginationDto;
+    
+    // const {categoryId} = filterDto;
 
-    const [products, total] =  await this.productRepository.findAndCount({
-      take: limit,
-      skip: offset,
-      relations: {
-        images: true
-      }
-    });
+    const queryBuilder = this.productRepository.createQueryBuilder('product');
+
+    queryBuilder.leftJoinAndSelect('product.images', 'image');
+
+    // console.log("CATEGORIAID", filterDto);
+
+    if( categoryId !== undefined) {
+      queryBuilder.andWhere('product.categoryId = :categoryId', { categoryId })
+    }
+
+    queryBuilder.take(limit);
+    queryBuilder.skip(offset);
+
+    const [products, total] = await queryBuilder.getManyAndCount();
+
+    const mappedProducts = products.map(({ images, ...rest }) => ({
+      ...rest,
+      images: images.map(img => img.url),
+    }));
+
+    return {
+      products: mappedProducts,
+      total
+    };
+  }
+
+  async findAllParam(paginationDto: PaginationDto, filterDto: FilterDto) {
+    
+    const { limit = 10, offset = 0 } = paginationDto;
+    const { categoryId, title } = filterDto;
+
+    // Crear un query builder para añadir condiciones de forma dinámica
+    const queryBuilder = this.productRepository.createQueryBuilder('product');
+
+    // Relacionar las imágenes
+    queryBuilder.leftJoinAndSelect('product.images', 'image');
+
+    // Filtrar por categoría si se proporciona
+    if (filterDto && categoryId) {
+        queryBuilder.andWhere('product.categoryId = :categoryId', { categoryId });
+    }
+
+    // Filtrar por títulos que contengan las palabras clave proporcionadas
+    if (title) {
+        queryBuilder.andWhere('product.title LIKE :title', { title: `%${title}%` });
+    }
+
+    // Paginación
+    queryBuilder.take(limit);
+    queryBuilder.skip(offset);
+
+    const [products, total] = await queryBuilder.getManyAndCount();
 
     const mappedProducts = products.map(({ images, ...rest }) => ({
       ...rest,
@@ -63,19 +146,15 @@ export class ProductsService {
     return {
       products: mappedProducts,
       total,
-      // products: products.map(({ images, ...rest }) => ({
-      //   ...rest,
-      //   images: images.map(img => img.url)
-      // })),
-      // total: totalProducts
     };
-  }
+}
+
 
   async findOne(term: string) { 
 
     let product: Product;
 
-    if(  isUUID(term) ){
+    if( isUUID(term) ){
       product = await this.productRepository.findOneBy({id: term});
     }else {
       const queryBuilder = this.productRepository.createQueryBuilder('prod');

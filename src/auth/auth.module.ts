@@ -7,10 +7,11 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './strategies/jwt-strategy';
+import { GoogleStrategy } from './strategies/google.strategy';
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, GoogleStrategy],
   imports: [
     ConfigModule,
     TypeOrmModule.forFeature([ User ]),
@@ -19,7 +20,6 @@ import { JwtStrategy } from './strategies/jwt-strategy';
       imports:[ ConfigModule ],
       inject:[ ConfigService ],
       useFactory: ( configService: ConfigService ) => {
-        console.log('commit', configService.get('JWT_SECRET'))
         return {
           secret: configService.get('JWT_SECRET'),
           signOptions: {
@@ -36,6 +36,6 @@ import { JwtStrategy } from './strategies/jwt-strategy';
     //   }
     // })
   ],
-  exports: [ TypeOrmModule, JwtStrategy, PassportModule, JwtModule ]
+  exports: [ TypeOrmModule, JwtStrategy, PassportModule, JwtModule, AuthService, GoogleStrategy ]
 })
 export class AuthModule {}

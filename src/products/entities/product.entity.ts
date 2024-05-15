@@ -2,9 +2,13 @@ import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToOne, OneToMany, Prima
 import { ProductImage } from "./product-image.entity";
 import { User } from "src/auth/entities/user.entity";
 import { ApiProperty } from "@nestjs/swagger";
+import { Category } from "src/categories/entities/category.entity";
 
 @Entity({name: 'products'})
 export class Product {
+
+    @ManyToOne(() => Category, category => category.produts)
+    category: Category;
 
     @ApiProperty({
         example: '274d073d-87f8-4c37-9eb7-1cc632c685e7',

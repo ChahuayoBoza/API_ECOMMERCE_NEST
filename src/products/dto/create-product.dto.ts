@@ -55,6 +55,8 @@ tags : string[];
 @IsOptional()
 images? : string[]
 
+categoryId: string;
+
 }
 
 

@@ -20,6 +20,15 @@ export class User {
     @Column('text')
     fullName: string;
 
+    @Column('text', { nullable: true })
+    firstName: string;
+
+    @Column('text', { nullable: true })
+    lastName: string;
+
+    @Column('text', { nullable: true })
+    picture: string
+
     @Column('bool', {
         default: true
     })

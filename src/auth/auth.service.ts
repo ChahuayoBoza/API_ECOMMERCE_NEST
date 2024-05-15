@@ -63,6 +63,32 @@ export class AuthService {
 
   }
 
+  async googleLogin(userProfile: any) {
+    const { email, firstName, lastName, picture } = userProfile;
+
+    let user = await this.userRepository.findOne({ where: { email } });
+
+    if (!user) {
+        // Crear usuario si no existe
+        user = this.userRepository.create({
+            email,
+            firstName,
+            lastName,
+            picture,
+            password: bcrypt.hashSync('defaultPassword', 10)  // Considera manejar las contraseñas de forma segura.
+        });
+
+        await this.userRepository.save(user);
+    }
+
+    return {
+        ...user,
+        token: this.getJwtToken({ id: user.id })
+    };
+}
+
+
+
 async checkAuthStatus(user: User) {
 
   return {

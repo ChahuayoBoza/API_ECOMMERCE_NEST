@@ -8,6 +8,7 @@ import { ValidRoles } from 'src/auth/interfaces';
 import { User } from 'src/auth/entities/user.entity';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Product } from './entities';
+import { FilterDto } from './dto/filter.dto';
 
 @ApiTags('Products')
 @Controller('products')
@@ -27,10 +28,17 @@ export class ProductsController {
   }
 
   @Get()
-  findAll(@Query() paginationDto:PaginationDto) {
-    console.log('PAG..DTO', paginationDto);
+  findAll(
+    @Query() paginationDto:PaginationDto, 
+  ) {
+    //console.log('CATEGORY-CONTROLLER', filterDto)
     return this.productsService.findAll(paginationDto);
   }
+
+  // @Get()
+  // findAllCategory(@Query() paginationDto:PaginationDto, filterDto:FilterDto){
+  //   return this.productsService.findAllParam(paginationDto, filterDto);
+  // }
 
   @Get(':term')
   findOne(@Param('term') term: string) {

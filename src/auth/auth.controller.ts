@@ -9,6 +9,7 @@ import { RoleProtected } from './decorators/role-protected.decorator';
 import { ValidRoles } from './interfaces';
 import { Auth } from './decorators';
 import { ApiTags } from '@nestjs/swagger';
+import { GoogleAuthGuard } from './guards/auth-google/google-auth.guard';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -34,6 +35,19 @@ export class AuthController {
     return this.authService.checkAuthStatus(user);
   }
 
+  @Post('google')
+  @UseGuards(GoogleAuthGuard)
+  async googleAuth(@Req() req) {
+    return  this.authService.googleLogin(req.userProfile)
+  }
+
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  googleAuthRedirect(@Req() req) {
+    // Google redirige aquí después de la autenticación
+    // Aquí puedes crear un token JWT, etc.
+    return this.authService.googleLogin(req)
+  }
   // @Get('private')
   // @UseGuards ( AuthGuard() )
   // testingPrivateRoute(

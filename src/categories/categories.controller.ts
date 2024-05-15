@@ -17,9 +17,9 @@ export class CategoriesController {
     return this.categoriesService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.categoriesService.findOne(+id);
+  @Get(':term')
+  findOne(@Param('term') term: string) {
+    return this.categoriesService.findOne(term);
   }
 
   @Patch(':id')
